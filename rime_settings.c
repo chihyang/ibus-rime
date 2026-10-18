@@ -6,11 +6,11 @@
 extern RimeApi *rime_api;
 
 static struct ColorSchemeDefinition preset_color_schemes[] = {
-  { "aqua", 0xffffff, 0x0a3dfa },
-  { "azure", 0xffffff, 0x0a3dea },
-  { "ink", 0xffffff, 0x000000 },
-  { "luna", 0x000000, 0xffff7f },
-  { NULL, 0, 0 }
+  { "aqua", 0xffffff, 0x0a3dfa, 0x5a5a5a },
+  { "azure", 0xffffff, 0x0a3dea, 0x6496c6 },
+  { "ink", 0xffffff, 0x000000, 0x5a5a5a },
+  { "luna", 0x000000, 0xffff7f, 0xa5a5a5 },
+  { NULL, 0, 0, 0 }
 };
 
 static struct IBusRimeSettings ibus_rime_settings_default = {

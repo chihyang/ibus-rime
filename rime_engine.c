@@ -448,12 +448,15 @@ static void ibus_rime_engine_update(IBusRimeEngine *rime_engine)
         gchar* temp = g_strconcat(text, " ", comment, NULL);
         cand_text = ibus_text_new_from_string(temp);
         g_free(temp);
-        int text_len = g_utf8_strlen(text, -1);
-        int end_index = ibus_text_get_length(cand_text);
-        ibus_text_append_attribute(cand_text,
-                                   IBUS_ATTR_TYPE_FOREGROUND,
-                                   RIME_COLOR_DARK,
-                                   text_len, end_index);
+        if (g_ibus_rime_settings.color_scheme) {
+          int text_len = g_utf8_strlen(text, -1);
+          int end_index = ibus_text_get_length(cand_text);
+          ibus_text_append_attribute(
+              cand_text,
+              IBUS_ATTR_TYPE_FOREGROUND,
+              g_ibus_rime_settings.color_scheme->comment_text_color,
+              text_len, end_index);
+        }
       }
       else {
         cand_text = ibus_text_new_from_string(text);

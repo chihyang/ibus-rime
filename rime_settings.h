@@ -22,6 +22,7 @@ struct ColorSchemeDefinition {
   const char* color_scheme_id;
   int text_color;
   int back_color;
+  int comment_text_color;
 };
 
 struct IBusRimeSettings {
