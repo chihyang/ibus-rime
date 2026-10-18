@@ -271,6 +271,11 @@ static void ibus_rime_update_status(IBusRimeEngine *rime_engine,
   }
 }
 
+static int ibus_rime_color_or(int preferred, int fallback)
+{
+  return preferred != RIME_COLOR_UNSET ? preferred : fallback;
+}
+
 static void ibus_rime_engine_update(IBusRimeEngine *rime_engine)
 {
   // update properties
@@ -330,21 +335,37 @@ static void ibus_rime_engine_update(IBusRimeEngine *rime_engine)
         inline_text->attrs,
         ibus_attr_underline_new(
             IBUS_ATTR_UNDERLINE_SINGLE, 0, inline_text_len));
+    if (g_ibus_rime_settings.color_scheme &&
+        g_ibus_rime_settings.color_scheme->text_color != RIME_COLOR_UNSET) {
+      ibus_attr_list_append(
+          inline_text->attrs,
+          ibus_attr_foreground_new(
+              g_ibus_rime_settings.color_scheme->text_color,
+              0, inline_text_len));
+    }
     // show the unconverted range of preedit text as auxiliary text
     if (has_highlighted_span) {
       preedit_offset = context.composition.sel_start;
       if (g_ibus_rime_settings.color_scheme) {
+        const int text_color = ibus_rime_color_or(
+            g_ibus_rime_settings.color_scheme->hilited_text_color,
+            g_ibus_rime_settings.color_scheme->text_color);
         const guint start = g_utf8_strlen(
             context.composition.preedit, context.composition.sel_start);
         const guint end = inline_text_len;
-        ibus_attr_list_append(
-            inline_text->attrs,
-            ibus_attr_foreground_new(
-                g_ibus_rime_settings.color_scheme->text_color, start, end));
-        ibus_attr_list_append(
-            inline_text->attrs,
-            ibus_attr_background_new(
-                g_ibus_rime_settings.color_scheme->back_color, start, end));
+        if (text_color != RIME_COLOR_UNSET) {
+          ibus_attr_list_append(
+              inline_text->attrs,
+              ibus_attr_foreground_new(text_color, start, end));
+        }
+        if (g_ibus_rime_settings.color_scheme->hilited_back_color !=
+            RIME_COLOR_UNSET) {
+          ibus_attr_list_append(
+              inline_text->attrs,
+              ibus_attr_background_new(
+                  g_ibus_rime_settings.color_scheme->hilited_back_color,
+                  start, end));
+        }
       }
     } else {
       // hide auxiliary text
@@ -367,19 +388,35 @@ static void ibus_rime_engine_update(IBusRimeEngine *rime_engine)
         inline_text->attrs,
         ibus_attr_underline_new(
             IBUS_ATTR_UNDERLINE_SINGLE, 0, inline_text_len));
+    if (g_ibus_rime_settings.color_scheme &&
+        g_ibus_rime_settings.color_scheme->text_color != RIME_COLOR_UNSET) {
+      ibus_attr_list_append(
+          inline_text->attrs,
+          ibus_attr_foreground_new(
+              g_ibus_rime_settings.color_scheme->text_color,
+              0, inline_text_len));
+    }
     if (has_highlighted_span && g_ibus_rime_settings.color_scheme) {
+      const int text_color = ibus_rime_color_or(
+          g_ibus_rime_settings.color_scheme->hilited_text_color,
+          g_ibus_rime_settings.color_scheme->text_color);
       const guint start = g_utf8_strlen(
           context.composition.preedit, context.composition.sel_start);
       const glong end = g_utf8_strlen(
           context.composition.preedit, context.composition.sel_end);
-      ibus_attr_list_append(
-          inline_text->attrs,
-          ibus_attr_foreground_new(
-              g_ibus_rime_settings.color_scheme->text_color, start, end));
-      ibus_attr_list_append(
-          inline_text->attrs,
-          ibus_attr_background_new(
-              g_ibus_rime_settings.color_scheme->back_color, start, end));
+      if (text_color != RIME_COLOR_UNSET) {
+        ibus_attr_list_append(
+            inline_text->attrs,
+            ibus_attr_foreground_new(text_color, start, end));
+      }
+      if (g_ibus_rime_settings.color_scheme->hilited_back_color !=
+          RIME_COLOR_UNSET) {
+        ibus_attr_list_append(
+            inline_text->attrs,
+            ibus_attr_background_new(
+                g_ibus_rime_settings.color_scheme->hilited_back_color,
+                start, end));
+      }
     }
     preedit_offset = context.composition.length;
   }
@@ -388,21 +425,43 @@ static void ibus_rime_engine_update(IBusRimeEngine *rime_engine)
   if (preedit_offset < context.composition.length) {
     const char* preedit = context.composition.preedit + preedit_offset;
     auxiliary_text = ibus_text_new_from_string(preedit);
-    // glong preedit_len = g_utf8_strlen(preedit, -1);
+    const glong preedit_len = ibus_text_get_length(auxiliary_text);
     // glong cursor_pos = g_utf8_strlen(
     //    preedit, context.composition.cursor_pos - preedit_offset);
-    if (has_highlighted_span) {
+    if (g_ibus_rime_settings.color_scheme || has_highlighted_span) {
       auxiliary_text->attrs = ibus_attr_list_new();
+    }
+    if (g_ibus_rime_settings.color_scheme &&
+        g_ibus_rime_settings.color_scheme->text_color != RIME_COLOR_UNSET) {
+      ibus_attr_list_append(
+          auxiliary_text->attrs,
+          ibus_attr_foreground_new(
+              g_ibus_rime_settings.color_scheme->text_color,
+              0, preedit_len));
+    }
+    if (has_highlighted_span) {
+      const int text_color = g_ibus_rime_settings.color_scheme ?
+          ibus_rime_color_or(
+              g_ibus_rime_settings.color_scheme->hilited_text_color,
+              g_ibus_rime_settings.color_scheme->text_color) :
+          RIME_COLOR_BLACK;
+      const int back_color = g_ibus_rime_settings.color_scheme ?
+          g_ibus_rime_settings.color_scheme->hilited_back_color :
+          RIME_COLOR_LIGHT;
       const glong start = g_utf8_strlen(
           preedit, context.composition.sel_start - preedit_offset);
       const glong end = g_utf8_strlen(
           preedit, context.composition.sel_end - preedit_offset);
-      ibus_attr_list_append(
-          auxiliary_text->attrs,
-          ibus_attr_foreground_new(RIME_COLOR_BLACK, start, end));
-      ibus_attr_list_append(
-          auxiliary_text->attrs,
-          ibus_attr_background_new(RIME_COLOR_LIGHT, start, end));
+      if (text_color != RIME_COLOR_UNSET) {
+        ibus_attr_list_append(
+            auxiliary_text->attrs,
+            ibus_attr_foreground_new(text_color, start, end));
+      }
+      if (back_color != RIME_COLOR_UNSET) {
+        ibus_attr_list_append(
+            auxiliary_text->attrs,
+            ibus_attr_background_new(back_color, start, end));
+      }
     }
   }
 
@@ -448,18 +507,50 @@ static void ibus_rime_engine_update(IBusRimeEngine *rime_engine)
         gchar* temp = g_strconcat(text, " ", comment, NULL);
         cand_text = ibus_text_new_from_string(temp);
         g_free(temp);
-        if (g_ibus_rime_settings.color_scheme) {
-          int text_len = g_utf8_strlen(text, -1);
-          int end_index = ibus_text_get_length(cand_text);
-          ibus_text_append_attribute(
-              cand_text,
-              IBUS_ATTR_TYPE_FOREGROUND,
-              g_ibus_rime_settings.color_scheme->comment_text_color,
-              text_len, end_index);
-        }
       }
       else {
         cand_text = ibus_text_new_from_string(text);
+      }
+      if (g_ibus_rime_settings.color_scheme) {
+        const gboolean hilited =
+            i == context.menu.highlighted_candidate_index;
+        const int text_len = g_utf8_strlen(text, -1);
+        const int end_index = ibus_text_get_length(cand_text);
+        const int candidate_color = hilited ?
+            ibus_rime_color_or(
+                g_ibus_rime_settings.color_scheme
+                    ->hilited_candidate_text_color,
+                g_ibus_rime_settings.color_scheme->candidate_text_color) :
+            g_ibus_rime_settings.color_scheme->candidate_text_color;
+        const int comment_color = hilited ?
+            ibus_rime_color_or(
+                g_ibus_rime_settings.color_scheme
+                    ->hilited_comment_text_color,
+                g_ibus_rime_settings.color_scheme->comment_text_color) :
+            g_ibus_rime_settings.color_scheme->comment_text_color;
+        if (candidate_color != RIME_COLOR_UNSET) {
+          ibus_text_append_attribute(
+              cand_text,
+              IBUS_ATTR_TYPE_FOREGROUND,
+              candidate_color,
+              0, text_len);
+        }
+        if (comment && comment_color != RIME_COLOR_UNSET) {
+          ibus_text_append_attribute(
+              cand_text,
+              IBUS_ATTR_TYPE_FOREGROUND,
+              comment_color,
+              text_len, end_index);
+        }
+        if (hilited &&
+            g_ibus_rime_settings.color_scheme->hilited_candidate_back_color !=
+            RIME_COLOR_UNSET) {
+          ibus_text_append_attribute(
+              cand_text,
+              IBUS_ATTR_TYPE_BACKGROUND,
+              g_ibus_rime_settings.color_scheme->hilited_candidate_back_color,
+              0, end_index);
+        }
       }
       ibus_lookup_table_append_candidate(rime_engine->table, cand_text);
       IBusText *label = NULL;
@@ -471,6 +562,23 @@ static void ibus_rime_engine_update(IBusRimeEngine *rime_engine)
       }
       else {
         label = ibus_text_new_from_printf("%d", (i + 1) % 10);
+      }
+      if (g_ibus_rime_settings.color_scheme) {
+        const gboolean hilited =
+            i == context.menu.highlighted_candidate_index;
+        const int label_color = hilited ?
+            ibus_rime_color_or(
+                g_ibus_rime_settings.color_scheme
+                    ->hilited_candidate_label_color,
+                g_ibus_rime_settings.color_scheme->label_color) :
+            g_ibus_rime_settings.color_scheme->label_color;
+        if (label_color != RIME_COLOR_UNSET) {
+          ibus_text_append_attribute(
+              label,
+              IBUS_ATTR_TYPE_FOREGROUND,
+              label_color,
+              0, ibus_text_get_length(label));
+        }
       }
       ibus_lookup_table_set_label(rime_engine->table, i, label);
     }

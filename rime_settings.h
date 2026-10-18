@@ -7,6 +7,7 @@
 #define RIME_COLOR_LIGHT  0xd4d4d4
 #define RIME_COLOR_DARK   0x606060
 #define RIME_COLOR_BLACK  0x000000
+#define RIME_COLOR_UNSET  (-1)
 
 enum PreeditStyle {
   PREEDIT_STYLE_COMPOSITION,
@@ -22,7 +23,15 @@ struct ColorSchemeDefinition {
   const char* color_scheme_id;
   int text_color;
   int back_color;
+  int candidate_text_color;
   int comment_text_color;
+  int label_color;
+  int hilited_text_color;
+  int hilited_back_color;
+  int hilited_candidate_text_color;
+  int hilited_candidate_back_color;
+  int hilited_comment_text_color;
+  int hilited_candidate_label_color;
 };
 
 struct IBusRimeSettings {
